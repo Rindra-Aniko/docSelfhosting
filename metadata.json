@@ -1,0 +1,6 @@
+{
+  "name": "Custom Documentation Builder",
+  "description": "Platform CMS mandiri untuk manajemen dokumentasi dengan editor teks kaya, sidebar dinamis bertingkat, dan navigasi otomatis.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

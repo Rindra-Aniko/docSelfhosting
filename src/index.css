@@ -1,0 +1,711 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Poppins", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Georgia", Cambria, "Times New Roman", Times, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+
+  /* Glossy Modern Slate/Indigo Palette (remapped to Coral names for safe system update) */
+  --color-coral-50: #f8fafc;
+  --color-coral-100: #f1f5f9;
+  --color-coral-200: #e2e8f0;
+  --color-coral-300: #cbd5e1;
+  --color-coral-400: #94a3b8;
+  --color-coral-500: #6366f1;
+  --color-coral-600: #4f46e5;
+  --color-coral-700: #4338ca;
+  --color-coral-800: #3730a3;
+  --color-coral-900: #1e1b4b;
+  --color-coral-950: #090d16;
+}
+
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 0.2s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+  .animate-slide-up {
+    animation: slideUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(12px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+/* Custom typography tuning for the reading layout to complement Tailwind Prose */
+.prose h1 {
+  color: var(--color-coral-900) !important;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+}
+
+.prose h2 {
+  font-size: 1.5em;
+  font-weight: 700;
+  color: var(--color-coral-900);
+  margin-top: 1.5em;
+  margin-bottom: 0.5em;
+  letter-spacing: -0.02em;
+}
+
+.prose h3 {
+  font-size: 1.25em;
+  font-weight: 600;
+  color: var(--color-coral-800);
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+  letter-spacing: -0.015em;
+}
+
+.prose blockquote {
+  border-left: 4px solid var(--color-coral-300);
+  padding-left: 1rem;
+  font-style: italic;
+  color: var(--color-coral-600);
+}
+
+.prose ul {
+  list-style-type: disc;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose ol {
+  list-style-type: decimal;
+  padding-left: 1.5rem;
+  margin-top: 1rem;
+  margin-bottom: 1rem;
+}
+
+.prose li {
+  margin-top: 0.25rem;
+  margin-bottom: 0.25rem;
+  color: #334155; /* modern slate-700 for comfortable reading */
+}
+
+/* Custom scrollbar and aesthetics for modern slate/indigo */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: var(--color-coral-50);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--color-coral-200);
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-coral-300);
+}
+
+/* Video Resizer Overlay Styles */
+.doca-video-container {
+  position: relative;
+  margin-left: auto;
+  margin-right: auto;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.doca-video-resizer-overlay {
+  position: absolute;
+  inset: 0;
+  background: color-mix(in srgb, var(--color-coral-500) 3%, transparent);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  border: 2px dashed color-mix(in srgb, var(--color-coral-500) 20%, transparent);
+  border-radius: 0.75rem;
+  transition: all 0.2s;
+}
+
+.doca-video-resizer-overlay:hover {
+  background: color-mix(in srgb, var(--color-coral-500) 8%, transparent);
+  border-color: color-mix(in srgb, var(--color-coral-500) 50%, transparent);
+}
+
+.doca-video-resizer-text {
+  background: var(--color-coral-500);
+  color: white;
+  padding: 6px 14px;
+  border-radius: 8px;
+  font-size: 10px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-coral-500) 20%, transparent);
+}
+
+/* Hide controls in Public View */
+#public-view-container .doca-video-resizer-overlay {
+  display: none !important;
+}
+
+/* Disable pointer events for video elements in editor to allow overlay clicks */
+#editor-body .doca-video-container iframe,
+#editor-body .doca-video-container video {
+  pointer-events: none;
+}
+
+/* ===== TABLE INSERT DIALOG ===== */
+.doca-table-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(30, 27, 75, 0.15); /* modern soft indigo dark overlay */
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.15s ease-out;
+}
+
+.doca-table-dialog {
+  background: rgba(255, 255, 255, 0.85); /* frosted glass effect */
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.5);
+  border-radius: 20px;
+  box-shadow:
+    0 25px 60px rgba(99, 102, 241, 0.12),
+    0 8px 24px rgba(0, 0, 0, 0.04),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  width: 340px;
+  overflow: hidden;
+  animation: slideUp 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doca-table-dialog-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--color-coral-200);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.6), rgba(241, 245, 249, 0.6));
+}
+
+.doca-table-dialog-header h3 {
+  font-size: 13px;
+  font-weight: 800;
+  color: var(--color-coral-900);
+  margin: 0;
+  letter-spacing: -0.01em;
+}
+
+.doca-table-dialog-close {
+  padding: 5px;
+  border-radius: 8px;
+  color: var(--color-coral-400);
+  background: none;
+  border: none;
+  cursor: pointer;
+  transition: all 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.doca-table-dialog-close:hover {
+  background: var(--color-coral-100);
+  color: var(--color-coral-800);
+  transform: scale(1.05);
+}
+
+.doca-table-dialog-body {
+  padding: 18px;
+}
+
+.doca-table-grid-label {
+  text-align: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-coral-900);
+  margin-bottom: 10px;
+  min-height: 20px;
+  transition: color 0.15s;
+}
+
+.doca-table-grid-picker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  padding: 10px;
+  background: rgba(248, 250, 252, 0.4);
+  border-radius: 12px;
+  border: 1.5px solid var(--color-coral-200);
+}
+
+.doca-table-grid-row {
+  display: flex;
+  gap: 3px;
+}
+
+.doca-table-grid-cell {
+  width: 28px;
+  height: 28px;
+  border: 1.5px solid var(--color-coral-200);
+  border-radius: 5px;
+  cursor: pointer;
+  transition: all 0.08s ease-out;
+  background: white;
+}
+
+.doca-table-grid-cell:hover {
+  border-color: var(--color-coral-300);
+}
+
+.doca-table-grid-cell.active {
+  background: linear-gradient(135deg, var(--color-coral-500), var(--color-coral-600));
+  border-color: var(--color-coral-700);
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.35);
+}
+
+.doca-table-manual-separator {
+  text-align: center;
+  margin: 16px 0 12px;
+  position: relative;
+}
+
+.doca-table-manual-separator::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: 50%;
+  height: 1px;
+  background: linear-gradient(to right, transparent, var(--color-coral-200), transparent);
+}
+
+.doca-table-manual-separator span {
+  position: relative;
+  background: white;
+  padding: 0 12px;
+  font-size: 10px;
+  color: var(--color-coral-800);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.doca-table-manual-input {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  justify-content: center;
+}
+
+.doca-table-manual-field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.doca-table-manual-field label {
+  font-size: 9px;
+  font-weight: 800;
+  color: var(--color-coral-800);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.doca-table-manual-field input {
+  width: 60px;
+  padding: 7px 8px;
+  border: 1.5px solid var(--color-coral-200);
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  text-align: center;
+  color: var(--color-coral-900);
+  background: rgba(248, 250, 252, 0.4);
+  outline: none;
+  transition: all 0.15s;
+}
+
+.doca-table-manual-field input:focus {
+  border-color: var(--color-coral-500);
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+  background: white;
+}
+
+.doca-table-manual-x {
+  font-size: 16px;
+  font-weight: 800;
+  color: var(--color-coral-300);
+  padding-bottom: 7px;
+}
+
+.doca-table-manual-btn {
+  padding: 8px 16px;
+  background: linear-gradient(135deg, var(--color-coral-500), var(--color-coral-600));
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.doca-table-manual-btn:hover {
+  background: linear-gradient(135deg, var(--color-coral-600), var(--color-coral-700));
+  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.3);
+  transform: translateY(-1px);
+}
+
+.doca-table-manual-btn:active {
+  transform: translateY(0);
+}
+
+/* ===== TABLE FLOATING TOOLBAR ===== */
+.doca-table-toolbar {
+  position: fixed;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  padding: 4px 6px;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-coral-200);
+  border-radius: 12px;
+  box-shadow:
+    0 10px 25px rgba(30, 27, 75, 0.06),
+    0 2px 8px rgba(0, 0, 0, 0.03),
+    inset 0 1px 0 rgba(255, 255, 255, 0.5);
+  animation: fadeIn 0.12s ease-out;
+  flex-wrap: nowrap;
+}
+
+.doca-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  position: relative;
+}
+
+.doca-toolbar-btn {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  padding: 5px 6px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-coral-900);
+  transition: all 0.1s;
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.doca-toolbar-btn:hover {
+  background: var(--color-coral-100);
+  color: var(--color-coral-800);
+}
+
+.doca-toolbar-btn-danger:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.doca-toolbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--color-coral-200);
+  margin: 0 2px;
+  flex-shrink: 0;
+}
+
+.doca-toolbar-close {
+  padding: 4px;
+  border: none;
+  background: none;
+  border-radius: 6px;
+  cursor: pointer;
+  color: var(--color-coral-300);
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.doca-toolbar-close:hover {
+  background: var(--color-coral-100);
+  color: var(--color-coral-800);
+}
+
+/* ===== COLOR PICKER PANEL ===== */
+.doca-table-color-picker-panel {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--color-coral-200);
+  border-radius: 12px;
+  padding: 12px;
+  box-shadow:
+    0 8px 30px rgba(30, 27, 75, 0.08),
+    0 0 0 1px rgba(99, 102, 241, 0.08);
+  z-index: 200;
+  min-width: 210px;
+  animation: fadeIn 0.1s ease-out;
+}
+
+.doca-color-presets {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  gap: 4px;
+  margin-bottom: 10px;
+}
+
+.doca-color-swatch {
+  width: 24px;
+  height: 24px;
+  border: 2px solid var(--color-coral-200);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.1s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.doca-color-swatch:hover {
+  transform: scale(1.2);
+  border-color: var(--color-coral-300);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  z-index: 1;
+  position: relative;
+}
+
+.doca-color-swatch.active {
+  border-color: var(--color-coral-500);
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.25);
+  transform: scale(1.1);
+}
+
+.doca-color-custom {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-coral-200);
+}
+
+.doca-color-custom label {
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-coral-900);
+}
+
+.doca-color-custom input[type="color"] {
+  width: 32px;
+  height: 24px;
+  border: 1.5px solid var(--color-coral-200);
+  border-radius: 6px;
+  cursor: pointer;
+  padding: 2px;
+  background: white;
+}
+
+.doca-color-custom input[type="color"]::-webkit-color-swatch-wrapper {
+  padding: 1px;
+}
+
+.doca-color-custom input[type="color"]::-webkit-color-swatch {
+  border: none;
+  border-radius: 3px;
+}
+
+/* ===== SIZE INPUT CONTROLS ===== */
+.doca-toolbar-size-input {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.doca-toolbar-size-input label {
+  font-size: 9px;
+  font-weight: 900;
+  color: var(--color-coral-800);
+  text-transform: uppercase;
+  flex-shrink: 0;
+}
+
+.doca-toolbar-size-input input {
+  width: 48px;
+  padding: 3px 4px;
+  border: 1.5px solid var(--color-coral-200);
+  border-radius: 5px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--color-coral-900);
+  background: rgba(248, 250, 252, 0.4);
+  outline: none;
+  transition: all 0.12s;
+}
+
+.doca-toolbar-size-input input::placeholder {
+  color: var(--color-coral-400);
+  font-weight: 400;
+}
+
+.doca-toolbar-size-input input:focus {
+  border-color: var(--color-coral-500);
+  background: white;
+  box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.08);
+}
+
+.doca-toolbar-size-apply {
+  padding: 3px 6px;
+  border: none;
+  background: linear-gradient(135deg, var(--color-coral-500), var(--color-coral-600));
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 10px;
+  font-weight: 800;
+  transition: all 0.12s;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.doca-toolbar-size-apply:hover {
+  background: linear-gradient(135deg, var(--color-coral-600), var(--color-coral-700));
+  box-shadow: 0 2px 6px rgba(99, 102, 241, 0.3);
+}
+
+/* ===== TABLE CELL INTERACTION IN EDITOR ===== */
+#editor-body table td,
+#editor-body table th {
+  position: relative;
+  transition: outline-color 0.1s;
+}
+
+#editor-body table td:hover,
+#editor-body table th:hover {
+  outline: 2px solid rgba(99, 102, 241, 0.25);
+  outline-offset: -2px;
+}
+
+/* Hide table toolbar in public view */
+#public-view-container .doca-table-toolbar {
+  display: none !important;
+}
+
+/* ===== CUSTOM AUDIO CARD PLAYER ===== */
+.doca-audio-card {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  max-width: 32rem;
+  margin: 1.5rem auto;
+  padding: 1rem;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-coral-200);
+  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), var(--color-coral-50));
+  box-shadow: 0 4px 12px rgba(30, 27, 75, 0.04);
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.doca-audio-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(30, 27, 75, 0.08);
+  border-color: var(--color-coral-300);
+}
+
+.doca-audio-icon-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 10px;
+  background: var(--color-coral-100);
+  color: var(--color-coral-600);
+  border-radius: 10px;
+  flex-shrink: 0;
+  transition: all 0.2s ease;
+}
+
+.doca-audio-card:hover .doca-audio-icon-container {
+  background: var(--color-coral-200);
+  color: var(--color-coral-700);
+}
+
+.doca-audio-card audio {
+  width: 100%;
+  height: 32px;
+  outline: none;
+  accent-color: var(--color-coral-500);
+}
+
+/* Audio container in editor */
+#editor-body .doca-audio-card {
+  user-select: none;
+}
+
+/* ===== CUSTOM EMBED CONTAINER ===== */
+.doca-embed-container {
+  max-width: 32rem;
+  margin: 1.5rem auto;
+  border-radius: 14px;
+  border: 1.5px solid var(--color-coral-200);
+  background: #000000;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding-top: 1.5%;
+  padding-right: 1.5%;
+}
+
+.doca-embed-container:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
+  border-color: var(--color-coral-300);
+}
+
+.doca-embed-container iframe {
+  display: block;
+  width: 100%;
+  background: transparent;
+}
+
+/* Allow iframe pointer-events in editor to play audio/video directly while writing */
+#editor-body .doca-embed-container iframe {
+  pointer-events: auto;
+}

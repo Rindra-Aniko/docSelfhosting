@@ -1,0 +1,110 @@
+{
+  "documentations": [
+    {
+      "id": "panduan-docacms",
+      "title": "Panduan Pengenalan DocaCMS",
+      "description": "Panduan resmi untuk memahami konfigurasi, fitur, dan penulisan bab di DocaCMS.",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "proyek-blank",
+      "title": "API References & SDK",
+      "description": "Basis pengetahuan teknis untuk integrasi API eksternal dan setup library pengembang.",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    }
+  ],
+  "topics": [
+    {
+      "id": "bab-1",
+      "documentation_id": "panduan-docacms",
+      "title": "1. Pengenalan Umum",
+      "slug": "pengenalan-umum",
+      "parent_id": null,
+      "sort_order": 1,
+      "content": "",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "sub-1-1",
+      "documentation_id": "panduan-docacms",
+      "title": "Apa itu DocaCMS?",
+      "slug": "apa-itu-docacms",
+      "parent_id": "bab-1",
+      "sort_order": 1,
+      "content": "<h2>Apa itu DocaCMS?</h2>\n<p><strong>DocaCMS</strong> adalah sistem manajemen konten (CMS) mandiri yang dirancang khusus untuk mempublikasikan dokumentasi teknis dan basis pengetahuan secara elegan, responsif, dan terorganisir.</p>\n\n<div class=\"my-4 p-4 rounded-lg bg-blue-50 text-blue-900 border-l-4 border-blue-500\">\n  <strong>📝 Info Penting:</strong> Aplikasi ini mendukung pembuatan nesting sidebar hingga dua tingkatan (Bab Utama & Sub-Bab) yang memiliki relasi berelasi-mandiri (Self-Referencing Relation).\n</div>\n\n<h3>Fitur-Fitur Utama Platform:</h3>\n<ul>\n  <li><strong>Penyusunan Sidebar Dinamis:</strong> Kelola struktur dokumentasi melalui antarmuka drag/interactive click dan ubah indeks urutan (sort_order).</li>\n  <li><strong>Editor HTML Kaya Teks:</strong> Editor WYSIWYG yang ringan untuk membuat tulisan dengan tajuk h2, h3, teks tebal, miring, kutipan blockquote, tabel, kode, serta info-box.</li>\n  <li><strong>Daftar Isi Otomatis:</strong> Navigasi cerdas di sebelah kanan yang otomatis mendeteksi elemen H2 dan H3 dalam tulisan Anda dan mendukung pindah porsi ketikan secara mulus.</li>\n  <li><strong>Mode Publik (Baca Saja) & Editor:</strong> Sembunyikan panel admin dalam satu klik untuk mendapatkan tampilan membaca super bersih layaknya platform Stripe atau Tailwind.</li>\n</ul>\n\n<h3>Arsitektur Database SQL (Turso)</h3>\n<p>Skema database dirancang dengan SQLite yang mendukung penyimpanan tabel mandiri:</p>\n<pre><code>CREATE TABLE topics (\n    id TEXT PRIMARY KEY,\n    documentation_id TEXT NOT NULL,\n    title TEXT NOT NULL,\n    slug TEXT NOT NULL,\n    parent_id TEXT, -- Relasi Self-Referencing\n    sort_order INTEGER DEFAULT 0,\n    content TEXT, -- Teks HTML Murni\n    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP\n);</code></pre>\n<p>Setiap topik yang memiliki <code>parent_id = NULL</code> akan bertindak sebagai Bab Utama, sedangkan jika memiliki referensi <code>parent_id</code> ke topik lain, ia akan otomatis bersarang di bawah Bab Utama tersebut.</p>",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "sub-1-2",
+      "documentation_id": "panduan-docacms",
+      "title": "Mengelola Proyek Dokumentasi",
+      "slug": "mengelola-proyek-dokumentasi",
+      "parent_id": "bab-1",
+      "sort_order": 2,
+      "content": "<h2>Mulai Mengelola Dokumentasi Baru</h2>\n<p>Untuk meluncurkan dokumentasi baru di DocaCMS, gunakan header navigasi di bagian atas halaman:</p>\n<ol>\n  <li>Klik tombol <strong>\"Proyek baru\"</strong> atau logo dropdown proyek.</li>\n  <li>Masukkan judul dan deskripsi ringkas tentang dokumentasi yang ingin Anda kerjakan.</li>\n  <li>Tekan tombol **Simpan**, dan Anda akan masuk ke lembar kerja yang bersih.</li>\n</ol>\n<div class=\"my-4 p-4 rounded-lg bg-amber-50 text-amber-900 border-l-4 border-amber-500\">\n  <strong>⚠️ Perhatian:</strong> Menghapus proyek dokumentasi utama akan secara otomatis menghapus seluruh daftar topik dan sub-bab yang berkaitan (Cascade Delete).\n</div>",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "bab-2",
+      "documentation_id": "panduan-docacms",
+      "title": "2. Menulis dan Mengatur",
+      "slug": "menulis-mengatur-menu",
+      "parent_id": null,
+      "sort_order": 2,
+      "content": "<h2>Panduan Menulis &amp; Menyortir Bab</h2><p>Gunakan bagian ini untuk memformat estetika tulisan Anda dengan format WYSIWYG yang canggih.</p><p><br></p><p><br></p>",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "sub-2-1",
+      "documentation_id": "panduan-docacms",
+      "title": "Tips Menggunakan Editor",
+      "slug": "tips-menggunakan-editor",
+      "parent_id": "bab-2",
+      "sort_order": 1,
+      "content": "<h2>Tips Menggunakan Editor Kaya Teks&nbsp;</h2>\n<p>Editor kami dirancang khusus untuk menghasilkan keluaran HTML murni yang kompetpatibel dengan berbagai peramban. Anda tidak perlu menguasai bahasa Markdown untuk menulis konten yang mengagumkan.</p>\n\n<h3>Cara Menggunakan Format Elemen:</h3>\n<p>Cukup pilih teks Anda atau letakkan kursor pada paragraf, kemudian klik salah satu alat tombol di toolbar editor:</p>\n<ul>\n  <li><strong>H2 &amp; H3:</strong> Menentukan tajuk utama dan sub-tajuk. Format ini juga akan dideteksi oleh Sidebar Pemindai Halaman (On-This-Page Navigation).</li>\n  <li><strong>Kotak Callout (Tip &amp; Info):</strong> Membuat kotak informasi berlatar belakang warna untuk mengedepankan info krusial.</li>\n  <li><strong>Blok Kode (Code Block):</strong> Format monospaced yang rapi untuk menyajikan cuplikan skrip pemrograman atau konfigurasi shell terminal.</li>\n</ul>\n\n<div class=\"my-4 p-4 rounded-lg bg-emerald-50 text-emerald-900 border-l-4 border-emerald-500\">\n  <strong>💡 Tip Desain:</strong> Untuk hasil baca yang optimal, selang-seling baris tulisan paragraf dengan heading yang berjarak seimbang untuk memberi ruang napas bagi mata pembaca.\n</div>",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "sub-2-2",
+      "documentation_id": "panduan-docacms",
+      "title": "Pengaturan Urutan Sidebar",
+      "slug": "pengaturan-urutan-sidebar",
+      "parent_id": "bab-2",
+      "sort_order": 2,
+      "content": "<h2>Mengatur Urutan Menu Sidebar</h2>\n<p>Secara bawaan, menu sidebar kiri diurutkan berdasarkan field <code>sort_order</code> terkecil hingga tertinggi.</p>\n<h3>Langkah-Langkah Mengatur Urutan:</h3>\n<ol>\n  <li>Di Mode Editor, arahkan kursor ke dalam salah satu menu di sidebar kiri.</li>\n  <li>Anda akan melihat panah ke atas (<strong>▲</strong>) dan kebawah (<strong>▼</strong>).</li>\n  <li>Klik tombol panah tersebut untuk menaikkan atau menurunkan posisi materi di sidebar dengan instan tanpa harus mengetik form manual!</li>\n</ol>\n<p>Sistem akan segera mengirimkan request backend untuk memperbarui field <code>sort_order</code> secara otomatis dan memperbarui urutan tampilan bagi pembaca publik.</p><p><br></p><p><br></p><p><br></p>",
+      "created_at": "2026-06-15T16:27:30.512Z"
+    },
+    {
+      "id": "topic-zhg3aphsi",
+      "documentation_id": "panduan-docacms",
+      "title": "contoh",
+      "slug": "contoh-dgo4",
+      "parent_id": "bab-2",
+      "sort_order": 3,
+      "content": "<h2>contoh</h2><p>Mulai menulis dokumentasi di sini menggunakan editor...</p><p><br></p><div class=\"doca-video-container\" style=\"width: 80%;\">\n          <div class=\"relative w-full aspect-video rounded-xl overflow-hidden shadow-lg border border-coral-200\">\n            <iframe src=\"https://www.youtube.com/embed/kHTxlSGl6CI\" title=\"Video\" frameborder=\"0\" allowfullscreen=\"\" class=\"absolute inset-0 w-full h-full\"></iframe>\n            <div class=\"doca-video-resizer-overlay\">\n              <div class=\"doca-video-resizer-text\">Atur Ukuran Video</div></div></div></div>",
+      "created_at": "2026-06-15T18:44:52.237Z"
+    },
+    {
+      "id": "topic-pu05f3w4s",
+      "documentation_id": "panduan-docacms",
+      "title": "contoh 2",
+      "slug": "contoh-2-c0zj",
+      "parent_id": "bab-2",
+      "sort_order": 4,
+      "content": "<h2>contoh 2</h2><p>Mulai menulis dokumentasi di sini menggunakan editor...</p><p><br></p><div class=\"doca-embed-container my-4 max-w-xl mx-auto rounded-xl overflow-hidden border border-coral-200 shadow-sm\" contenteditable=\"false\">\n              <iframe src=\"https://archive.org/embed/kenapa-sulit-kaya-di-negara-kaya\" width=\"100%\" height=\"42\" style=\"border-style: none;\" allowfullscreen=\"\" allow=\"autoplay; clipboard-write; encrypted-media; fullscreen;\"></iframe>\n            </div><p>\n            </p><p>&nbsp;</p>",
+      "created_at": "2026-06-16T03:15:46.655Z"
+    }
+  ],
+  "users": [
+    {
+      "id": "admin-1",
+      "username": "admin",
+      "password_hash": "$2b$10$UXWztnQjTo1nUBH.LzJl/.qUGUxQou7Kp1yuhrek/2hgFyi/94Ga2",
+      "created_at": "2026-06-15T17:15:37.272Z",
+      "must_change_password": false,
+      "fullName": "rindra",
+      "email": "aplikasi.balitbang@gmail.com",
+      "bio": "operator aplikasi"
+    }
+  ]
+}
