@@ -31,7 +31,6 @@ Format berkas ini merujuk pada [Keep a Changelog](https://keepachangelog.com/id/
 ### Ditambahkan
 
 - **Middleware Proteksi API (Fase 1.1)**: Proteksi token JWT menggunakan middleware `authenticateToken` pada seluruh endpoint mutasi (POST, PUT, DELETE) di `server.ts`.
-- **Sanitasi HTML (Fase 1.2)**: Integrasi sanitizer `dompurify` pada editor visual dan public reading canvas guna mencegah celah keamanan Cross-Site Scripting (XSS).
 - **Rate Limiter & CORS Whitelist (Fase 1.3)**: Memasang pembatas request (max 5 request/menit) pada endpoint login serta CORS global dengan whitelist domain terkonfigurasi.
 - **Force Change Password (Fase 1.4)**: Mengamankan admin bawaan dengan mewajibkan penggantian kata sandi default pada saat pertama kali login.
 - **Pemisahan Tipe Data (Fase 2.1)**: Konsolidasi seluruh tipe data ke `src/shared/types.ts` yang diakses bersama oleh frontend dan backend.

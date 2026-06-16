@@ -20,7 +20,8 @@ export function useTopics(
     async (docId: string) => {
       setLoadingTopics(true);
       try {
-        const res = await fetch(`/api/documentations/${docId}/topics`);
+        // Add cache-busting timestamp to ensure fresh data
+        const res = await fetch(`/api/documentations/${docId}/topics?t=${Date.now()}`);
         if (!res.ok) throw new Error("Gagal mengambil menu sidebar topics");
         const data = await res.json();
         setTopics(data);

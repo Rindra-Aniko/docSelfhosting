@@ -116,58 +116,6 @@
   background: var(--color-coral-300);
 }
 
-/* Video Resizer Overlay Styles */
-.doca-video-container {
-  position: relative;
-  margin-left: auto;
-  margin-right: auto;
-  margin-top: 1.5rem;
-  margin-bottom: 1.5rem;
-}
-
-.doca-video-resizer-overlay {
-  position: absolute;
-  inset: 0;
-  background: color-mix(in srgb, var(--color-coral-500) 3%, transparent);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  z-index: 10;
-  border: 2px dashed color-mix(in srgb, var(--color-coral-500) 20%, transparent);
-  border-radius: 0.75rem;
-  transition: all 0.2s;
-}
-
-.doca-video-resizer-overlay:hover {
-  background: color-mix(in srgb, var(--color-coral-500) 8%, transparent);
-  border-color: color-mix(in srgb, var(--color-coral-500) 50%, transparent);
-}
-
-.doca-video-resizer-text {
-  background: var(--color-coral-500);
-  color: white;
-  padding: 6px 14px;
-  border-radius: 8px;
-  font-size: 10px;
-  font-weight: 900;
-  text-transform: uppercase;
-  letter-spacing: 0.1em;
-  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-coral-500) 20%, transparent);
-}
-
-/* Hide controls in Public View */
-#public-view-container .doca-video-resizer-overlay {
-  display: none !important;
-}
-
-/* Disable pointer events for video elements in editor to allow overlay clicks */
-#editor-body .doca-video-container iframe,
-#editor-body .doca-video-container video {
-  pointer-events: none;
-}
-
 /* ===== TABLE INSERT DIALOG ===== */
 .doca-table-dialog-overlay {
   position: fixed;
@@ -626,86 +574,224 @@
   display: none !important;
 }
 
-/* ===== CUSTOM AUDIO CARD PLAYER ===== */
-.doca-audio-card {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-  max-width: 32rem;
-  margin: 1.5rem auto;
-  padding: 1rem;
-  border-radius: 14px;
-  border: 1.5px solid var(--color-coral-200);
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0.95), var(--color-coral-50));
-  box-shadow: 0 4px 12px rgba(30, 27, 75, 0.04);
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
-}
-
-.doca-audio-card:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(30, 27, 75, 0.08);
-  border-color: var(--color-coral-300);
-}
-
-.doca-audio-icon-container {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 10px;
-  background: var(--color-coral-100);
-  color: var(--color-coral-600);
-  border-radius: 10px;
-  flex-shrink: 0;
-  transition: all 0.2s ease;
-}
-
-.doca-audio-card:hover .doca-audio-icon-container {
-  background: var(--color-coral-200);
-  color: var(--color-coral-700);
-}
-
-.doca-audio-card audio {
+/* Ensure iframes in prose have height if not explicitly set by wrapper */
+.prose iframe {
   width: 100%;
-  height: 32px;
-  outline: none;
-  accent-color: var(--color-coral-500);
+  min-height: 400px;
+  border-radius: 12px;
 }
 
-/* Audio container in editor */
-#editor-body .doca-audio-card {
+.video-content-wrapper {
+  clear: both;
+}
+
+/* ===== VIDEO FRAME & HOVER RESIZE HELPERS ===== */
+.video-frame {
+  transition: all 0.2s ease;
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: 14px;
+  padding: 4px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  max-width: 100%;
+}
+
+#editor-body .video-frame {
+  cursor: pointer;
   user-select: none;
 }
 
-/* ===== CUSTOM EMBED CONTAINER ===== */
-.doca-embed-container {
-  max-width: 32rem;
-  margin: 1.5rem auto;
-  border-radius: 14px;
-  border: 1.5px solid var(--color-coral-200);
-  background: #000000;
+#editor-body .video-frame:hover {
+  border-color: var(--color-coral-500);
+  background: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+}
+
+#editor-body .video-frame iframe,
+#editor-body .video-frame video {
+  pointer-events: none;
+}
+
+.video-frame iframe,
+.video-frame video {
+  min-height: 0;
+  aspect-ratio: 16 / 9;
+}
+
+#editor-body .video-frame::after {
+  content: "Klik untuk mengatur ukuran / URL video";
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(30, 27, 75, 0.9);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  overflow: hidden;
-  transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+#editor-body .video-frame:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== AUDIO FRAME & HOVER EDIT HELPERS ===== */
+.audio-frame {
+  transition: all 0.2s ease;
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: 14px;
+  padding: 8px;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  justify-content: center;
-  padding-top: 1.5%;
-  padding-right: 1.5%;
+  max-width: 100%;
 }
 
-.doca-embed-container:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
-  border-color: var(--color-coral-300);
+#editor-body .audio-frame {
+  cursor: pointer;
+  user-select: none;
 }
 
-.doca-embed-container iframe {
-  display: block;
+#editor-body .audio-frame:hover {
+  border-color: var(--color-coral-500);
+  background: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+}
+
+#editor-body .audio-frame audio {
+  pointer-events: none;
+}
+
+#editor-body .audio-frame::after {
+  content: "Klik untuk mengubah audio URL / Archive.org";
+  position: absolute;
+  bottom: -28px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(30, 27, 75, 0.9);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#editor-body .audio-frame:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+/* ===== RESPONSIVE GRID LAYOUTS ===== */
+.layout-row {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
   width: 100%;
-  background: transparent;
 }
 
-/* Allow iframe pointer-events in editor to play audio/video directly while writing */
-#editor-body .doca-embed-container iframe {
-  pointer-events: auto;
+@media (min-width: 768px) {
+  .layout-row.cols-2 {
+    grid-template-columns: repeat(2, 1fr);
+  }
+  .layout-row.cols-3 {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .layout-row.cols-30-70 {
+    grid-template-columns: 3fr 7fr;
+  }
 }
+
+.layout-col {
+  padding: 0.5rem;
+  min-height: 50px;
+}
+
+#editor-body .layout-col {
+  border: 1px dashed var(--color-coral-200);
+  border-radius: 8px;
+  outline: none;
+  transition: border-color 0.15s ease;
+}
+
+#editor-body .layout-col:focus-within {
+  border-color: var(--color-coral-500);
+  border-style: solid;
+}
+
+/* ===== IMAGE FRAME & HOVER EDIT HELPERS ===== */
+.image-frame {
+  transition: all 0.2s ease;
+  position: relative;
+  border: 2px dashed transparent;
+  border-radius: 14px;
+}
+
+#editor-body .image-frame {
+  cursor: pointer;
+  user-select: none;
+}
+
+#editor-body .image-frame:hover {
+  border-color: var(--color-coral-500);
+  background: rgba(99, 102, 241, 0.03);
+  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.05);
+}
+
+#editor-body .image-frame img {
+  pointer-events: none;
+}
+
+#editor-body .image-frame::after {
+  content: "Klik untuk mengatur ukuran / posisi gambar";
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%) translateY(10px);
+  background: rgba(30, 27, 75, 0.9);
+  color: white;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 6px 12px;
+  border-radius: 8px;
+  opacity: 0;
+  transition: all 0.2s ease;
+  pointer-events: none;
+  z-index: 10;
+  white-space: nowrap;
+  letter-spacing: 0.02em;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+#editor-body .image-frame:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+
+
+
+
+
+
+

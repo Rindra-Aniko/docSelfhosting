@@ -4,7 +4,9 @@ export function useTableEditor(
   editorRef: React.RefObject<HTMLDivElement | null>,
   isSourceMode: boolean,
   execCommand: (command: string, value?: string) => void,
-  handleEditorInput: () => void
+  handleEditorInput: () => void,
+  saveSelection: () => void,
+  restoreSelection: () => void
 ) {
   // Table dialog state
   const [showTableDialog, setShowTableDialog] = useState(false);
@@ -33,6 +35,7 @@ export function useTableEditor(
 
   const openTableDialog = () => {
     if (isSourceMode) return;
+    saveSelection();
     setShowTableDialog(true);
     setGridHoverRow(0);
     setGridHoverCol(0);
@@ -61,9 +64,7 @@ export function useTableEditor(
 
     const tableHtml = `<table class="w-full border-collapse border border-coral-200 my-4 text-sm font-sans" contenteditable="true"><thead>${headerRow}</thead><tbody>${bodyRows}</tbody></table><p>&nbsp;</p>`;
 
-    if (editorRef.current) {
-      editorRef.current.focus();
-    }
+    restoreSelection();
     execCommand("insertHTML", tableHtml);
     setShowTableDialog(false);
   };

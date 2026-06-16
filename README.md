@@ -9,13 +9,12 @@ Aplikasi ini memiliki arsitektur terpisah antara React (frontend) dan Node.js/Ex
 ## 🚀 Fitur Utama
 
 - **Penyusunan Sidebar Interaktif**: Mengatur tata letak bab utama dan sub-bab secara instan dengan navigasi naik/turun dinamis yang langsung menyimpan urutan (`sort_order`) ke database.
-- **Editor WYSIWYG Kaya Teks**: Editor HTML visual kustom untuk menulis materi dengan H2, H3, teks tebal, miring, kutipan, tabel interaktif (mendukung resize kolom), info-box kustom, serta penyisipan tautan dan media (gambar, video, audio).
+- **Editor WYSIWYG Kaya Teks**: Editor HTML visual kustom untuk menulis materi dengan H2, H3, teks tebal, miring, kutipan, tabel interaktif (mendukung resize kolom), info-box kustom, serta penyisipan tautan dan gambar.
 - **Optimalisasi Performa (Database Caching)**: Backend menggunakan in-memory cache untuk menyajikan data secara instan tanpa hambatan operasi file synchronous read (`fs.readFileSync`). Database disinkronkan ke disk (`database.json`) secara asinkron saat terjadi perubahan data.
 - **Sinkronisasi Otomatis (File Watcher)**: Menggunakan watcher file `fs.watch` untuk mendeteksi modifikasi eksternal pada database dan memperbarui in-memory cache secara real-time.
 - **Keamanan Kritis Terjamin**:
   - Middleware otentikasi JWT pada seluruh endpoint API mutasi data.
   - Rate limiting pada endpoint login guna mencegah brute-force.
-  - Sanitasi konten HTML menggunakan `dompurify` untuk pencegahan celah XSS.
   - Kewajiban mengganti sandi default saat pertama kali login.
 - **Aksesibilitas Tinggi (A11y)**:
   - Dukungan bypass navigasi ("Skip to Content") untuk navigasi keyboard cepat.
@@ -27,7 +26,7 @@ Aplikasi ini memiliki arsitektur terpisah antara React (frontend) dan Node.js/Ex
 
 ## 🛠️ Tech Stack
 
-- **Frontend**: React 19, Lucide React (Icons), Tailwind CSS v4, DOMPurify.
+- **Frontend**: React 19, Lucide React (Icons), Tailwind CSS v4.
 - **Backend**: Node.js, Express, JSON Web Token (JWT), BcryptJS, Express Rate Limit, Cors.
 - **Perkakas**: TypeScript (linting & type check), Vite (bundling), Esbuild (backend compiler), TSX (runner), Rimraf (pembersih lintas platform).
 

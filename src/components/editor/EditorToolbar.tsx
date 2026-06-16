@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   Bold,
   Italic,
@@ -14,10 +14,12 @@ import {
   AlignLeft,
   AlignJustify,
   Image,
+  Video,
+  Headphones,
+  Baseline,
+  Columns,
   AlignCenter,
   Link,
-  Video,
-  Volume2,
   Info,
   AlertTriangle,
   CheckCircle,
@@ -31,8 +33,9 @@ interface EditorToolbarProps {
   insertCodeBlock: () => void;
   openTableDialog: () => void;
   insertImage: () => void;
-  insertVideo: () => void;
-  insertAudio: () => void;
+  openVideoDialog: () => void;
+  openAudioDialog: () => void;
+  openLayoutDialog: () => void;
   insertCallout: (type: "info" | "warning" | "success") => void;
   manualSave: () => void;
   toggleSourceMode: () => void;
@@ -46,15 +49,17 @@ export default function EditorToolbar({
   insertCodeBlock,
   openTableDialog,
   insertImage,
-  insertVideo,
-  insertAudio,
+  openVideoDialog,
+  openAudioDialog,
+  openLayoutDialog,
   insertCallout,
   manualSave,
   toggleSourceMode,
 }: EditorToolbarProps) {
+  const [showColorPicker, setShowColorPicker] = useState(false);
   return (
     <div
-      className="flex flex-wrap items-center justify-between p-3 gap-2 bg-coral-50 border-b border-coral-200/85 relative z-10"
+      className="flex flex-wrap items-center justify-between p-3 gap-2 bg-coral-50 border-b border-coral-200/85 sticky top-[76px] z-20 shadow-sm rounded-t-xl"
       id="editor-toolbar"
       role="toolbar"
       aria-label="Editor Formatting Toolbar"
@@ -63,6 +68,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("bold")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Tebal"
           aria-label="Tebal (Bold)"
@@ -73,6 +79,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("italic")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Miring"
           aria-label="Miring (Italic)"
@@ -83,6 +90,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("underline")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Garis Bawah"
           aria-label="Garis Bawah (Underline)"
@@ -90,10 +98,64 @@ export default function EditorToolbar({
         >
           <Underline className="w-4 h-4" />
         </button>
+        <div className="relative">
+          <button
+            type="button"
+            onClick={() => setShowColorPicker(!showColorPicker)}
+            onMouseDown={(e) => e.preventDefault()}
+            disabled={isSourceMode}
+            title="Warna Font"
+            aria-label="Warna Font"
+            className={`p-1.5 rounded hover:bg-coral-200 disabled:opacity-30 ${showColorPicker ? "bg-coral-200 text-coral-800" : "text-coral-600"}`}
+          >
+            <Baseline className="w-4 h-4" />
+          </button>
+          {showColorPicker && (
+            <div className="absolute top-full left-0 mt-1.5 p-3 w-44 bg-white border border-coral-200 rounded-xl shadow-lg z-30 space-y-3">
+              <div className="grid grid-cols-4 gap-1.5">
+                {[
+                  "#1e1b4b", // Gelap Utama
+                  "#64748b", // Abu-abu
+                  "#ef4444", // Merah
+                  "#f97316", // Coral/Oranye
+                  "#eab308", // Kuning
+                  "#10b981", // Hijau
+                  "#3b82f6", // Biru
+                  "#8b5cf6", // Ungu
+                ].map((color) => (
+                  <button
+                    key={color}
+                    type="button"
+                    onMouseDown={(e) => e.preventDefault()}
+                    onClick={() => {
+                      execCommand("foreColor", color);
+                      setShowColorPicker(false);
+                    }}
+                    style={{ backgroundColor: color }}
+                    className="w-6 h-6 rounded-md cursor-pointer border border-coral-200 hover:scale-110 active:scale-95 transition-transform"
+                    title={color}
+                  />
+                ))}
+              </div>
+              <div className="flex items-center justify-between pt-2 border-t border-coral-100">
+                <label className="text-[10px] font-bold text-coral-500 uppercase tracking-wider">Kustom</label>
+                <input
+                  type="color"
+                  onMouseDown={(e) => e.stopPropagation()}
+                  onChange={(e) => {
+                    execCommand("foreColor", e.target.value);
+                  }}
+                  className="w-8 h-6 rounded border border-coral-200 cursor-pointer p-0.5 bg-white"
+                />
+              </div>
+            </div>
+          )}
+        </div>
         <span className="h-4 w-[1px] bg-coral-200 mx-1" />
         <button
           type="button"
           onClick={() => execCommand("formatBlock", "H2")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="H2"
           aria-label="Judul Utama (H2)"
@@ -104,6 +166,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("formatBlock", "H3")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Sub Judul"
           aria-label="Sub-judul (H3)"
@@ -114,6 +177,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("formatBlock", "P")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Rata Kiri"
           aria-label="Rata Kiri"
@@ -124,6 +188,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("justifyCenter")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Rata Tengah"
           aria-label="Rata Tengah"
@@ -134,6 +199,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("justifyFull")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Rata Kiri Kanan"
           aria-label="Rata Kiri Kanan"
@@ -145,6 +211,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("insertUnorderedList")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="List"
           aria-label="Daftar Bullets"
@@ -155,6 +222,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("insertOrderedList")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Ordered"
           aria-label="Daftar Angka"
@@ -165,6 +233,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={() => execCommand("formatBlock", "BLOCKQUOTE")}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Quote"
           aria-label="Kutipan (Blockquote)"
@@ -175,6 +244,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={insertLink}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Link"
           aria-label="Sisipkan Tautan"
@@ -186,6 +256,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={insertCodeBlock}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Kode"
           aria-label="Sisipkan Blok Kode"
@@ -197,6 +268,7 @@ export default function EditorToolbar({
         <button
           type="button"
           onClick={openTableDialog}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Tabel"
           aria-label="Sisipkan Tabel"
@@ -207,7 +279,20 @@ export default function EditorToolbar({
         </button>
         <button
           type="button"
+          onClick={openLayoutDialog}
+          onMouseDown={(e) => e.preventDefault()}
+          disabled={isSourceMode}
+          title="Layout Kolom"
+          aria-label="Sisipkan Layout Kolom"
+          className="p-1.5 rounded text-coral-700 hover:bg-coral-100 border border-coral-200 flex items-center gap-1 px-2"
+        >
+          <Columns className="w-3.5 h-3.5" />
+          <span className="text-[10px] font-bold">Layout</span>
+        </button>
+        <button
+          type="button"
           onClick={insertImage}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Foto"
           aria-label="Sisipkan Gambar"
@@ -218,7 +303,8 @@ export default function EditorToolbar({
         </button>
         <button
           type="button"
-          onClick={insertVideo}
+          onClick={openVideoDialog}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Video"
           aria-label="Sisipkan Video"
@@ -229,13 +315,14 @@ export default function EditorToolbar({
         </button>
         <button
           type="button"
-          onClick={insertAudio}
+          onClick={openAudioDialog}
+          onMouseDown={(e) => e.preventDefault()}
           disabled={isSourceMode}
           title="Audio"
           aria-label="Sisipkan Audio"
           className="p-1.5 rounded text-coral-700 hover:bg-coral-100 border border-coral-200 flex items-center gap-1 px-2"
         >
-          <Volume2 className="w-3.5 h-3.5" />
+          <Headphones className="w-3.5 h-3.5" />
           <span className="text-[10px] font-bold">Audio</span>
         </button>
         <span className="h-4 w-[1px] bg-coral-200 mx-1" />
@@ -243,6 +330,7 @@ export default function EditorToolbar({
           <button
             type="button"
             onClick={() => insertCallout("info")}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={isSourceMode}
             title="Info"
             aria-label="Sisipkan Info Box"
@@ -253,6 +341,7 @@ export default function EditorToolbar({
           <button
             type="button"
             onClick={() => insertCallout("warning")}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={isSourceMode}
             title="Warning"
             aria-label="Sisipkan Warning Box"
@@ -263,6 +352,7 @@ export default function EditorToolbar({
           <button
             type="button"
             onClick={() => insertCallout("success")}
+            onMouseDown={(e) => e.preventDefault()}
             disabled={isSourceMode}
             title="Success"
             aria-label="Sisipkan Success Box"

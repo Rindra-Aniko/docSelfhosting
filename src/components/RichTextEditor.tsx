@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
-import DOMPurify from "dompurify";
 import { Topic } from "../types";
 import EditorToolbar from "./editor/EditorToolbar";
 import TableToolbar from "./editor/TableToolbar";
@@ -7,6 +6,46 @@ import TableDialog from "./editor/TableDialog";
 import { useAutoSave } from "./editor/useAutoSave";
 import { useTableEditor } from "./editor/useTableEditor";
 import { InputDialog } from "./InputDialog";
+import VideoDialog from "./editor/VideoDialog";
+import AudioDialog from "./editor/AudioDialog";
+import LayoutDialog from "./editor/LayoutDialog";
+import ImageDialog from "./editor/ImageDialog";
+import { sanitizeHtml } from "../shared/sanitize";
+
+
+
+
+
+// Helper to parse video URL and return clean source for iframe embed or direct link
+const parseVideoSource = (url: string) => {
+  const cleanUrl = url.trim();
+  
+  // YouTube watch link: youtube.com/watch?v=VIDEO_ID or youtu.be/VIDEO_ID
+  const ytRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
+  const ytMatch = cleanUrl.match(ytRegex);
+  if (ytMatch && ytMatch[1]) {
+    return {
+      type: "embed",
+      url: `https://www.youtube.com/embed/${ytMatch[1]}`
+    };
+  }
+
+  // Vimeo link: vimeo.com/VIDEO_ID or player.vimeo.com/video/VIDEO_ID
+  const vimeoRegex = /(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/;
+  const vimeoMatch = cleanUrl.match(vimeoRegex);
+  if (vimeoMatch && vimeoMatch[1]) {
+    return {
+      type: "embed",
+      url: `https://player.vimeo.com/video/${vimeoMatch[1]}`
+    };
+  }
+
+  // Otherwise, assume it is a direct link to a video file
+  return {
+    type: "direct",
+    url: cleanUrl
+  };
+};
 
 interface RichTextEditorProps {
   activeTopic: Topic;
@@ -27,6 +66,68 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
     title: "",
     defaultValue: "",
     resolve: null,
+  });
+
+  const [videoDialogState, setVideoDialogState] = useState<{
+    isOpen: boolean;
+    url: string;
+    width: string;
+    height: string;
+    alignH: "left" | "center" | "right";
+    frame: "none" | "styled";
+    isEditMode: boolean;
+    editingNode: HTMLElement | null;
+  }>({
+    isOpen: false,
+    url: "",
+    width: "100%",
+    height: "auto",
+    alignH: "center",
+    frame: "none",
+    isEditMode: false,
+    editingNode: null,
+  });
+
+  const [audioDialogState, setAudioDialogState] = useState<{
+    isOpen: boolean;
+    url: string;
+    resolvedUrl: string;
+    width: string;
+    alignH: "left" | "center" | "right";
+    frame: "none" | "styled";
+    isEditMode: boolean;
+    editingNode: HTMLElement | null;
+  }>({
+    isOpen: false,
+    url: "",
+    resolvedUrl: "",
+    width: "100%",
+    alignH: "center",
+    frame: "none",
+    isEditMode: false,
+    editingNode: null,
+  });
+
+  const [showLayoutDialog, setShowLayoutDialog] = useState(false);
+
+  const [imageDialogState, setImageDialogState] = useState<{
+    isOpen: boolean;
+    url: string;
+    width: string;
+    height: string;
+    alignH: "left" | "center" | "right";
+    frame: "none" | "styled";
+    isEditMode: boolean;
+    editingNode: HTMLImageElement | null;
+  }>({
+    isOpen: false,
+    url: "",
+    width: "100%",
+    height: "auto",
+    alignH: "center",
+    frame: "none",
+    isEditMode: false,
+    editingNode: null,
   });
 
   const triggerPrompt = useCallback((title: string, defaultValue = ""): Promise<string | null> => {
@@ -52,6 +153,29 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
     if (promptState.resolve) promptState.resolve(null);
     setPromptState((prev) => ({ ...prev, isOpen: false, resolve: null }));
   }, [promptState]);
+
+  const savedSelection = useRef<Range | null>(null);
+
+  const saveSelection = useCallback(() => {
+    const sel = window.getSelection();
+    if (sel && sel.rangeCount > 0) {
+      const range = sel.getRangeAt(0);
+      if (editorRef.current && editorRef.current.contains(range.commonAncestorContainer)) {
+        savedSelection.current = range;
+      }
+    }
+  }, []);
+
+  const restoreSelection = useCallback(() => {
+    if (savedSelection.current) {
+      const sel = window.getSelection();
+      if (sel) {
+        sel.removeAllRanges();
+        sel.addRange(savedSelection.current);
+      }
+      savedSelection.current = null;
+    }
+  }, []);
 
   // Hook 1: Auto-Save management
   const { saveStatus, sourceCode, setSourceCode, triggerAutoSave, manualSave } = useAutoSave(
@@ -117,15 +241,12 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
     setCellBgColor,
     applyColumnWidth,
     applyRowHeight,
-  } = useTableEditor(editorRef, isSourceMode, execCommand, handleEditorInput);
+  } = useTableEditor(editorRef, isSourceMode, execCommand, handleEditorInput, saveSelection, restoreSelection);
 
   // Sync content when topic changes
   useEffect(() => {
     if (editorRef.current) {
-      editorRef.current.innerHTML = DOMPurify.sanitize(activeTopic.content || "", {
-        ADD_TAGS: ["iframe"],
-        ADD_ATTR: ["allow", "allowfullscreen", "frameborder", "target", "contenteditable", "style"],
-      });
+      editorRef.current.innerHTML = sanitizeHtml(activeTopic.content || "");
     }
     setIsSourceMode(false);
     setShowTableToolbar(false);
@@ -153,17 +274,7 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
       setIsSourceMode(false);
       setTimeout(() => {
         if (editorRef.current) {
-          editorRef.current.innerHTML = DOMPurify.sanitize(sourceCode, {
-            ADD_TAGS: ["iframe"],
-            ADD_ATTR: [
-              "allow",
-              "allowfullscreen",
-              "frameborder",
-              "target",
-              "contenteditable",
-              "style",
-            ],
-          });
+          editorRef.current.innerHTML = sourceCode;
           editorRef.current.focus();
         }
       }, 50);
@@ -198,250 +309,357 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
     execCommand("insertHTML", codeHtml);
   };
 
-  const insertImage = async () => {
+  const insertImage = () => {
     if (isSourceMode) return;
-    const url = await triggerPrompt("Masukkan URL Gambar:");
-    if (!url) return;
-    const width = await triggerPrompt("Masukkan Lebar Gambar (contoh: 100%, 50%, 300px):", "100%");
-    if (width === null) return;
-    const imgHtml = `<div class="flex flex-col items-center my-4"><img src="${url}" alt="Gambar" style="width: ${width || "100%"};" class="h-auto rounded-lg shadow-sm border border-coral-200 cursor-pointer" /></div><p>&nbsp;</p>`;
-    execCommand("insertHTML", imgHtml);
+    saveSelection();
+    setImageDialogState({
+      isOpen: true,
+      url: "",
+      width: "100%",
+      height: "auto",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const handleImageConfirm = (
+    url: string,
+    width: string,
+    height: string,
+    alignH: "left" | "center" | "right",
+    frame: "none" | "styled"
+  ) => {
+    let justifyOuterClass = "justify-center";
+    if (alignH === "left") justifyOuterClass = "justify-start";
+    if (alignH === "right") justifyOuterClass = "justify-end";
+
+    const frameClasses = frame === "styled"
+      ? "border border-coral-200 bg-coral-50/20 rounded-xl p-2"
+      : "";
+
+    const frameStyle = `width: ${width}; height: ${height}; max-width: 100%;`;
+    const imgStyle = `max-width: 100%; max-height: 100%; object-fit: contain;`;
+
+    const imgHtml = `<img src="${url}" alt="Gambar" style="${imgStyle}" class="rounded-lg cursor-pointer transition-all hover:opacity-95" />`;
+    const imgFrameHtml = `<div class="image-frame flex flex-col items-center justify-center ${frameClasses}" style="${frameStyle}">${imgHtml}</div>`;
+
+    if (imageDialogState.isEditMode && imageDialogState.editingNode) {
+      // Update existing node
+      const imgNode = imageDialogState.editingNode;
+      const wrapper = imgNode.closest(".image-wrapper") as HTMLElement;
+
+      if (wrapper) {
+        wrapper.setAttribute("data-img-url", url);
+        wrapper.setAttribute("data-img-width", width);
+        wrapper.setAttribute("data-img-height", height);
+        wrapper.setAttribute("data-img-align-h", alignH);
+        wrapper.setAttribute("data-img-frame", frame);
+        wrapper.className = `image-wrapper my-4 flex flex-row ${justifyOuterClass}`;
+        wrapper.setAttribute("style", "width: 100%;");
+        wrapper.innerHTML = imgFrameHtml;
+      } else {
+        // Fallback: wrap it
+        const newWrapper = document.createElement("div");
+        newWrapper.className = `image-wrapper my-4 flex flex-row ${justifyOuterClass}`;
+        newWrapper.setAttribute("data-img-url", url);
+        newWrapper.setAttribute("data-img-width", width);
+        newWrapper.setAttribute("data-img-height", height);
+        newWrapper.setAttribute("data-img-align-h", alignH);
+        newWrapper.setAttribute("data-img-frame", frame);
+        newWrapper.setAttribute("contenteditable", "false");
+        newWrapper.setAttribute("style", "width: 100%;");
+        newWrapper.innerHTML = imgFrameHtml;
+        imgNode.parentNode?.replaceChild(newWrapper, imgNode);
+      }
+      handleEditorInput();
+    } else {
+      // Insert new image
+      restoreSelection();
+      const wrappedImgHtml = `<div class="image-wrapper my-4 flex flex-row ${justifyOuterClass}" data-img-url="${url}" data-img-width="${width}" data-img-height="${height}" data-img-align-h="${alignH}" data-img-frame="${frame}" contenteditable="false" style="width: 100%;">${imgFrameHtml}</div><p>&nbsp;</p>`;
+      execCommand("insertHTML", wrappedImgHtml);
+    }
+
+    setImageDialogState({
+      isOpen: false,
+      url: "",
+      width: "100%",
+      height: "auto",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const openVideoDialog = () => {
+    if (isSourceMode) return;
+    saveSelection();
+    setVideoDialogState({
+      isOpen: true,
+      url: "",
+      width: "100%",
+      height: "auto",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const handleVideoConfirm = (
+    url: string,
+    width: string,
+    height: string,
+    alignH: "left" | "center" | "right",
+    frame: "none" | "styled"
+  ) => {
+    const parsed = parseVideoSource(url);
+    
+    let justifyOuterClass = "justify-center";
+    if (alignH === "left") justifyOuterClass = "justify-start";
+    if (alignH === "right") justifyOuterClass = "justify-end";
+
+    const frameClasses = frame === "styled"
+      ? "border border-coral-200 bg-coral-50/20 rounded-xl p-2"
+      : "";
+
+    const frameStyle = `width: ${width}; height: ${height}; max-width: 100%;`;
+    const mediaHtml = parsed.type === "embed"
+      ? `<iframe src="${parsed.url}" frameborder="0" allowfullscreen style="width: 100%; height: 100%;" class="rounded-lg shadow-sm border border-coral-200"></iframe>`
+      : `<video src="${parsed.url}" controls style="width: 100%; height: auto;" class="rounded-lg shadow-sm border border-coral-200"></video>`;
+
+    const videoFrameHtml = `<div class="video-frame flex flex-col items-center justify-center ${frameClasses}" style="${frameStyle}">${mediaHtml}</div>`;
+
+    if (videoDialogState.isEditMode && videoDialogState.editingNode) {
+      const node = videoDialogState.editingNode;
+      node.setAttribute("data-video-url", url);
+      node.setAttribute("data-video-width", width);
+      node.setAttribute("data-video-height", height);
+      node.setAttribute("data-video-align-h", alignH);
+      node.setAttribute("data-video-frame", frame);
+      node.className = `video-wrapper my-4 flex flex-row ${justifyOuterClass} cursor-pointer`;
+      node.setAttribute("style", "width: 100%;");
+      node.innerHTML = videoFrameHtml;
+      
+      handleEditorInput();
+    } else {
+      restoreSelection();
+      const wrappedVideoHtml = `<div class="video-wrapper my-4 flex flex-row ${justifyOuterClass} cursor-pointer" data-video-url="${url}" data-video-width="${width}" data-video-height="${height}" data-video-align-h="${alignH}" data-video-frame="${frame}" contenteditable="false" style="width: 100%;">${videoFrameHtml}</div><p>&nbsp;</p>`;
+      execCommand("insertHTML", wrappedVideoHtml);
+    }
+
+    setVideoDialogState({
+      isOpen: false,
+      url: "",
+      width: "100%",
+      height: "auto",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const openAudioDialog = () => {
+    if (isSourceMode) return;
+    saveSelection();
+    setAudioDialogState({
+      isOpen: true,
+      url: "",
+      resolvedUrl: "",
+      width: "100%",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const handleAudioConfirm = (
+    url: string,
+    resolvedUrl: string,
+    width: string,
+    alignH: "left" | "center" | "right",
+    frame: "none" | "styled"
+  ) => {
+    let justifyOuterClass = "justify-center";
+    if (alignH === "left") justifyOuterClass = "justify-start";
+    if (alignH === "right") justifyOuterClass = "justify-end";
+
+    const frameClasses = frame === "styled"
+      ? "border border-coral-200 bg-coral-50/20 rounded-xl p-2"
+      : "";
+
+    const frameStyle = `width: ${width}; max-width: 100%;`;
+    const audioHtml = `<audio src="${resolvedUrl}" controls class="w-full rounded-lg"></audio>`;
+    const audioFrameHtml = `<div class="audio-frame flex flex-col items-center justify-center ${frameClasses}" style="${frameStyle}">${audioHtml}</div>`;
+
+    if (audioDialogState.isEditMode && audioDialogState.editingNode) {
+      const node = audioDialogState.editingNode;
+      node.setAttribute("data-audio-url", url);
+      node.setAttribute("data-resolved-url", resolvedUrl);
+      node.setAttribute("data-audio-width", width);
+      node.setAttribute("data-audio-align-h", alignH);
+      node.setAttribute("data-audio-frame", frame);
+      node.className = `audio-wrapper my-4 flex flex-row ${justifyOuterClass} cursor-pointer`;
+      node.setAttribute("style", "width: 100%;");
+      node.innerHTML = audioFrameHtml;
+      
+      handleEditorInput();
+    } else {
+      restoreSelection();
+      const wrappedAudioHtml = `<div class="audio-wrapper my-4 flex flex-row ${justifyOuterClass} cursor-pointer" data-audio-url="${url}" data-resolved-url="${resolvedUrl}" data-audio-width="${width}" data-audio-align-h="${alignH}" data-audio-frame="${frame}" contenteditable="false" style="width: 100%;">${audioFrameHtml}</div><p>&nbsp;</p>`;
+      execCommand("insertHTML", wrappedAudioHtml);
+    }
+
+    setAudioDialogState({
+      isOpen: false,
+      url: "",
+      resolvedUrl: "",
+      width: "100%",
+      alignH: "center",
+      frame: "none",
+      isEditMode: false,
+      editingNode: null,
+    });
+  };
+
+  const openLayoutDialog = () => {
+    if (isSourceMode) return;
+    saveSelection();
+    setShowLayoutDialog(true);
+  };
+
+  const handleLayoutConfirm = (type: "cols-2" | "cols-3" | "cols-30-70") => {
+    restoreSelection();
+    
+    let columnsHtml = "";
+    if (type === "cols-2") {
+      columnsHtml = `<div class="layout-row cols-2 my-6" contenteditable="false"><div class="layout-col" contenteditable="true"><h3>Kolom Kiri</h3><p>Tulis teks kolom kiri di sini...</p></div><div class="layout-col" contenteditable="true"><h3>Kolom Kanan</h3><p>Tulis teks kolom kanan di sini...</p></div></div><p>&nbsp;</p>`;
+    } else if (type === "cols-3") {
+      columnsHtml = `<div class="layout-row cols-3 my-6" contenteditable="false"><div class="layout-col" contenteditable="true"><h3>Kolom 1</h3><p>Tulis teks kolom 1 di sini...</p></div><div class="layout-col" contenteditable="true"><h3>Kolom 2</h3><p>Tulis teks kolom 2 di sini...</p></div><div class="layout-col" contenteditable="true"><h3>Kolom 3</h3><p>Tulis teks kolom 3 di sini...</p></div></div><p>&nbsp;</p>`;
+    } else if (type === "cols-30-70") {
+      columnsHtml = `<div class="layout-row cols-30-70 my-6" contenteditable="false"><div class="layout-col" contenteditable="true"><h3>Detail</h3><p>Materi pendukung...</p></div><div class="layout-col" contenteditable="true"><h3>Penjelasan Utama</h3><p>Tulis isi penjelasan utama di sini secara rinci...</p></div></div><p>&nbsp;</p>`;
+    }
+
+    execCommand("insertHTML", columnsHtml);
+    setShowLayoutDialog(false);
   };
 
   const insertLink = async () => {
     if (isSourceMode) return;
+    saveSelection();
     const url = await triggerPrompt("Masukkan URL Link (contoh: https://google.com):", "https://");
     if (url && url !== "https://") {
       const selection = window.getSelection()?.toString();
       if (!selection) {
         const text = await triggerPrompt("Masukkan Teks Tautan:", url);
-        if (text === null) return;
+        if (text === null) {
+          savedSelection.current = null;
+          return;
+        }
         const linkHtml = `<a href="${url}" target="_blank" class="text-coral-800 font-bold hover:underline">${text || url}</a>`;
+        restoreSelection();
         execCommand("insertHTML", linkHtml);
       } else {
+        restoreSelection();
         execCommand("createLink", url);
       }
-    }
-  };
-
-  const insertVideo = async () => {
-    if (isSourceMode) return;
-    const url = await triggerPrompt(
-      "Masukkan URL Video (Link file .mp4, link YouTube/Vimeo, atau kode embed <iframe>):",
-      "https://"
-    );
-    if (!url) return;
-    const trimmed = url.trim();
-    if (trimmed === "" || trimmed === "https://") return;
-
-    const width = await triggerPrompt(
-      "Masukkan Lebar Tampilan Video (contoh: 100%, 70%, 500px):",
-      "100%"
-    );
-    if (width === null) return;
-
-    let contentHtml = "";
-
-    if (trimmed.startsWith("<iframe")) {
-      const srcMatch = trimmed.match(/src=["']([^"']+)["']/);
-      if (srcMatch && srcMatch[1]) {
-        contentHtml = `<iframe src="${srcMatch[1]}" frameborder="0" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>`;
-      } else {
-        contentHtml = trimmed.replace("<iframe", '<iframe class="absolute inset-0 w-full h-full"');
-      }
     } else {
-      const isArchiveOrg = trimmed.includes("archive.org");
-      const isRawVideo = !isArchiveOrg && /\.(mp4|webm|ogg|mov|mkv)(\?.*)?$/i.test(trimmed);
-
-      if (isRawVideo) {
-        contentHtml = `<video controls class="w-full h-full object-cover"><source src="${trimmed}" type="video/mp4"></video>`;
-      } else if (trimmed.includes("youtube.com") || trimmed.includes("youtu.be")) {
-        let videoId = "";
-        if (trimmed.includes("v=")) {
-          videoId = trimmed.split("v=")[1].split("&")[0];
-        } else if (trimmed.includes("youtu.be/")) {
-          videoId = trimmed.split("youtu.be/")[1].split("?")[0];
-        }
-        if (videoId) {
-          contentHtml = `<iframe src="https://www.youtube.com/embed/${videoId}" title="Video" frameborder="0" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>`;
-        }
-      } else if (trimmed.includes("vimeo.com")) {
-        const matches = trimmed.match(/vimeo\.com\/(\d+)/);
-        if (matches && matches[1]) {
-          contentHtml = `<iframe src="https://player.vimeo.com/video/${matches[1]}" title="Vimeo Video" frameborder="0" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>`;
-        } else {
-          contentHtml = `<iframe src="${trimmed}" title="Video" frameborder="0" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>`;
-        }
-      } else {
-        let embedUrl = trimmed;
-        if (embedUrl.includes("drive.google.com") && embedUrl.includes("/view")) {
-          embedUrl = embedUrl.replace("/view", "/preview");
-        }
-        if (
-          embedUrl.includes("archive.org/details/") ||
-          embedUrl.includes("archive.org/download/")
-        ) {
-          embedUrl = embedUrl.replace(
-            /archive\.org\/(details|download)\/([^/]+).*/,
-            "archive.org/embed/$2"
-          );
-        }
-        contentHtml = `<iframe src="${embedUrl}" title="Video" frameborder="0" allowfullscreen class="absolute inset-0 w-full h-full"></iframe>`;
-      }
-    }
-
-    if (contentHtml) {
-      const videoHtml = `
-        <div class="doca-video-container" style="width: ${width || "100%"};">
-          <div class="relative w-full aspect-video rounded-xl overflow-hidden shadow-lg border border-coral-200">
-            ${contentHtml}
-            <div class="doca-video-resizer-overlay">
-              <div class="doca-video-resizer-text">Atur Ukuran Video</div>
-            </div>
-          </div>
-        </div>
-        <p>&nbsp;</p>
-      `;
-      execCommand("insertHTML", videoHtml);
+      savedSelection.current = null;
     }
   };
 
-  const insertAudio = async () => {
-    if (isSourceMode) return;
-    const url = await triggerPrompt(
-      "Masukkan URL Audio (Link file .mp3, link audio.com, link NotebookLM, atau kode embed <iframe>):",
-      "https://"
-    );
-    if (!url) return;
-    const trimmed = url.trim();
-    if (trimmed === "" || trimmed === "https://") return;
-
-    let contentHtml = "";
-
-    if (trimmed.startsWith("<iframe")) {
-      contentHtml = `
-        <div class="doca-embed-container my-4 max-w-xl mx-auto rounded-xl overflow-hidden border border-coral-200 shadow-sm" contenteditable="false">
-          ${trimmed}
-        </div>
-        <p>&nbsp;</p>
-      `;
-    } else {
-      const isArchiveOrg = trimmed.includes("archive.org");
-      const isRawAudio = !isArchiveOrg && /\.(mp3|wav|ogg|m4a|flac|aac)(\?.*)?$/i.test(trimmed);
-
-      if (isRawAudio) {
-        let mimeType = "audio/mpeg";
-        if (trimmed.endsWith(".m4a")) {
-          mimeType = "audio/mp4";
-        } else if (trimmed.endsWith(".wav")) {
-          mimeType = "audio/wav";
-        } else if (trimmed.endsWith(".ogg")) {
-          mimeType = "audio/ogg";
-        } else if (trimmed.endsWith(".aac")) {
-          mimeType = "audio/aac";
-        }
-
-        contentHtml = `
-          <div class="doca-audio-card my-4 p-4 rounded-xl border border-coral-200 bg-coral-50/70 backdrop-blur-md flex items-center gap-4 max-w-xl mx-auto shadow-sm" contenteditable="false">
-            <div class="doca-audio-icon-container">
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-volume-2"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"/><path d="M15.54 8.46a5 5 0 0 1 0 7.07"/><path d="M19.07 4.93a10 10 0 0 1 0 14.14"/></svg>
-            </div>
-            <div class="flex-1 min-w-0">
-              <div class="text-[10px] font-bold text-coral-500 uppercase tracking-widest truncate">Pemutar Audio</div>
-              <audio controls preload="metadata" class="w-full mt-1 accent-coral-500 h-8 focus:outline-none">
-                <source src="${trimmed}" type="${mimeType}">
-                Browser Anda tidak mendukung pemutaran audio ini.
-              </audio>
-            </div>
-          </div>
-          <p>&nbsp;</p>
-        `;
-      } else {
-        let embedUrl = trimmed;
-        if (embedUrl.includes("audio.com") && !embedUrl.includes("/embed/")) {
-          embedUrl = embedUrl.replace(
-            /audio\.com\/([^/]+)\/audio\/([^/?#]+)/,
-            "audio.com/embed/$1/audio/$2"
-          );
-        }
-        if (
-          embedUrl.includes("archive.org/details/") ||
-          embedUrl.includes("archive.org/download/")
-        ) {
-          embedUrl = embedUrl.replace(
-            /archive\.org\/(details|download)\/([^/]+).*/,
-            "archive.org/embed/$2"
-          );
-        }
-
-        const isNotebookLM = embedUrl.includes("notebooklm.google.com");
-
-        let iframeHeight = "120";
-        if (embedUrl.includes("archive.org")) {
-          iframeHeight = "42";
-        } else if (embedUrl.includes("audio.com")) {
-          iframeHeight = "150";
-        }
-
-        if (isNotebookLM) {
-          contentHtml = `
-            <div class="doca-audio-card my-4 p-4 rounded-xl border border-coral-200 bg-coral-50/70 backdrop-blur-md flex items-center gap-4 max-w-xl mx-auto shadow-sm" contenteditable="false">
-              <div class="doca-audio-icon-container">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-external-link"><path d="M15 3h6v6"/><path d="M10 14 21 3"/><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/></svg>
-              </div>
-              <div class="flex-1 min-w-0">
-                <div class="text-[10px] font-bold text-coral-500 uppercase tracking-widest truncate">NotebookLM Audio Overview</div>
-                <div class="text-xs font-semibold text-coral-900 mt-0.5 truncate">Dengar Audio Podcast AI</div>
-                <a href="${embedUrl}" target="_blank" class="inline-flex items-center gap-1.5 mt-2 px-3 py-1.5 bg-coral-800 hover:bg-coral-900 text-white text-[11px] font-bold rounded-lg transition-all shadow-sm">
-                  <span>Buka Pemutar Audio ↗</span>
-                </a>
-              </div>
-            </div>
-            <p>&nbsp;</p>
-          `;
-        } else {
-          contentHtml = `
-            <div class="doca-embed-container my-4 max-w-xl mx-auto rounded-xl overflow-hidden border border-coral-200 shadow-sm" style="height: ${iframeHeight}px;" contenteditable="false">
-              <iframe src="${embedUrl}" width="100%" height="100%" style="border:0;" allowfullscreen allow="autoplay; clipboard-write; encrypted-media; fullscreen;"></iframe>
-            </div>
-            <p>&nbsp;</p>
-          `;
-        }
-      }
-    }
-
-    if (contentHtml) {
-      execCommand("insertHTML", contentHtml);
-    }
-  };
-
-  // Image and Video resize click handler
+  // Media click handler (Image resize & Video/Audio edit)
   useEffect(() => {
     const handleEditorClick = async (e: MouseEvent) => {
       const target = e.target as HTMLElement;
 
-      // Image Resizing
-      if (target.tagName === "IMG" && editorRef.current?.contains(target)) {
-        const newWidth = await triggerPrompt("Ubah Lebar Gambar:", target.style.width || "100%");
-        if (newWidth) {
-          target.style.width = newWidth;
-          handleEditorInput();
+      // Image Resizing/Alignment Edit
+      const imageWrapper = target.closest(".image-wrapper") as HTMLElement;
+      if (imageWrapper && editorRef.current?.contains(imageWrapper)) {
+        const imgNode = imageWrapper.querySelector("img");
+        if (imgNode) {
+          const imgUrl = imgNode.getAttribute("src") || "";
+          const imgWidth = imageWrapper.getAttribute("data-img-width") || "100%";
+          const imgHeight = imageWrapper.getAttribute("data-img-height") || "auto";
+          const imgAlignH = imageWrapper.getAttribute("data-img-align-h") || imageWrapper.getAttribute("data-img-align") || "center";
+          const imgFrame = imageWrapper.getAttribute("data-img-frame") || "none";
+
+          setImageDialogState({
+            isOpen: true,
+            url: imgUrl,
+            width: imgWidth,
+            height: imgHeight,
+            alignH: imgAlignH as "left" | "center" | "right",
+            frame: imgFrame as "none" | "styled",
+            isEditMode: true,
+            editingNode: imgNode,
+          });
+          return;
         }
+      } else if (target.tagName === "IMG" && editorRef.current?.contains(target)) {
+        const imgNode = target as HTMLImageElement;
+        const imgUrl = imgNode.getAttribute("src") || "";
+        const imgWidth = imgNode.style.width || "100%";
+        
+        setImageDialogState({
+          isOpen: true,
+          url: imgUrl,
+          width: imgWidth,
+          height: "auto",
+          alignH: "center",
+          frame: "none",
+          isEditMode: true,
+          editingNode: imgNode,
+        });
+        return;
       }
 
-      // Video Resizing
-      const overlay = target.closest(".doca-video-resizer-overlay");
-      const videoContainer = target.closest(".doca-video-container") as HTMLElement;
+      // Video Editing/Resizing
+      const videoWrapper = target.closest(".video-wrapper") as HTMLElement;
+      if (videoWrapper && editorRef.current?.contains(videoWrapper)) {
+        const videoUrl = videoWrapper.getAttribute("data-video-url") || "";
+        const videoWidth = videoWrapper.getAttribute("data-video-width") || "100%";
+        const videoHeight = videoWrapper.getAttribute("data-video-height") || "auto";
+        const videoAlignH = videoWrapper.getAttribute("data-video-align-h") || "center";
+        const videoFrame = videoWrapper.getAttribute("data-video-frame") || "none";
 
-      if (overlay && videoContainer && editorRef.current?.contains(videoContainer)) {
-        const newWidth = await triggerPrompt(
-          "Ubah Lebar Video (contoh: 100%, 70%, 500px):",
-          videoContainer.style.width || "100%"
-        );
-        if (newWidth) {
-          videoContainer.style.width = newWidth;
-          handleEditorInput();
-        }
+        setVideoDialogState({
+          isOpen: true,
+          url: videoUrl,
+          width: videoWidth,
+          height: videoHeight,
+          alignH: videoAlignH as "left" | "center" | "right",
+          frame: videoFrame as "none" | "styled",
+          isEditMode: true,
+          editingNode: videoWrapper,
+        });
+        return;
+      }
+
+      // Audio Editing
+      const audioWrapper = target.closest(".audio-wrapper") as HTMLElement;
+      if (audioWrapper && editorRef.current?.contains(audioWrapper)) {
+        const audioUrl = audioWrapper.getAttribute("data-audio-url") || "";
+        const resolvedUrl = audioWrapper.getAttribute("data-resolved-url") || "";
+        const audioWidth = audioWrapper.getAttribute("data-audio-width") || "100%";
+        const audioAlignH = audioWrapper.getAttribute("data-audio-align-h") || "center";
+        const audioFrame = audioWrapper.getAttribute("data-audio-frame") || "none";
+
+        setAudioDialogState({
+          isOpen: true,
+          url: audioUrl,
+          resolvedUrl: resolvedUrl,
+          width: audioWidth,
+          alignH: audioAlignH as "left" | "center" | "right",
+          frame: audioFrame as "none" | "styled",
+          isEditMode: true,
+          editingNode: audioWrapper,
+        });
+        return;
       }
     };
 
@@ -454,11 +672,11 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
         currentEditor.removeEventListener("click", handleEditorClick);
       }
     };
-  }, [handleEditorInput, triggerPrompt]);
+  }, [handleEditorInput, triggerPrompt, setVideoDialogState, setAudioDialogState, setImageDialogState]);
 
   return (
     <div
-      className="flex flex-col h-full bg-white rounded-xl border border-coral-200 shadow-sm overflow-hidden relative"
+      className="flex flex-col h-full bg-white rounded-xl border border-coral-200 shadow-sm overflow-visible relative"
       id="editor-wrapper"
     >
       {/* Save Status Progress Bar */}
@@ -485,8 +703,9 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
         insertCodeBlock={insertCodeBlock}
         openTableDialog={openTableDialog}
         insertImage={insertImage}
-        insertVideo={insertVideo}
-        insertAudio={insertAudio}
+        openVideoDialog={openVideoDialog}
+        openAudioDialog={openAudioDialog}
+        openLayoutDialog={openLayoutDialog}
         insertCallout={insertCallout}
         manualSave={manualSave}
         toggleSourceMode={toggleSourceMode}
@@ -523,7 +742,7 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
         )}
       </div>
 
-      <div className="px-4 py-1.5 bg-coral-50 border-t border-coral-200/80 text-[10px] text-coral-400 flex justify-between">
+      <div className="px-4 py-1.5 bg-coral-50 border-t border-coral-200/80 text-[10px] text-coral-400 flex justify-between rounded-b-xl">
         <span>Gunakan H2/H3 untuk navigasi otomatis.</span>
         <span>Autosave aktif • Ctrl+S untuk simpan manual</span>
       </div>
@@ -575,6 +794,51 @@ export default function RichTextEditor({ activeTopic, onSave }: RichTextEditorPr
         defaultValue={promptState.defaultValue}
         onConfirm={handlePromptSubmit}
         onCancel={handlePromptCancel}
+      />
+
+      {/* Custom Video Dialog */}
+      <VideoDialog
+        isOpen={videoDialogState.isOpen}
+        onClose={() => setVideoDialogState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleVideoConfirm}
+        initialUrl={videoDialogState.url}
+        initialWidth={videoDialogState.width}
+        initialHeight={videoDialogState.height}
+        initialAlignH={videoDialogState.alignH}
+        initialFrame={videoDialogState.frame}
+        isEditMode={videoDialogState.isEditMode}
+      />
+
+      {/* Custom Audio Dialog */}
+      <AudioDialog
+        isOpen={audioDialogState.isOpen}
+        onClose={() => setAudioDialogState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleAudioConfirm}
+        initialUrl={audioDialogState.url}
+        initialWidth={audioDialogState.width}
+        initialAlignH={audioDialogState.alignH}
+        initialFrame={audioDialogState.frame}
+        isEditMode={audioDialogState.isEditMode}
+      />
+
+      {/* Custom Layout Dialog */}
+      <LayoutDialog
+        isOpen={showLayoutDialog}
+        onClose={() => setShowLayoutDialog(false)}
+        onConfirm={handleLayoutConfirm}
+      />
+
+      {/* Custom Image Dialog */}
+      <ImageDialog
+        isOpen={imageDialogState.isOpen}
+        onClose={() => setImageDialogState(prev => ({ ...prev, isOpen: false }))}
+        onConfirm={handleImageConfirm}
+        initialUrl={imageDialogState.url}
+        initialWidth={imageDialogState.width}
+        initialHeight={imageDialogState.height}
+        initialAlignH={imageDialogState.alignH}
+        initialFrame={imageDialogState.frame}
+        isEditMode={imageDialogState.isEditMode}
       />
     </div>
   );

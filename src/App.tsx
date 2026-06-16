@@ -38,6 +38,10 @@ export default function App() {
     handleDeleteDoc,
   } = useDocumentations(token, authHeaders);
 
+  const handleTopicsError = useCallback((msg: string) => {
+    setErrorMsg(msg);
+  }, [setErrorMsg]);
+
   const {
     topics,
     activeTopicId,
@@ -47,7 +51,8 @@ export default function App() {
     handleSaveTopicContent,
     handleDeleteTopic,
     handleReorderTopics,
-  } = useTopics(activeDocId, token, authHeaders, (msg) => setErrorMsg(msg));
+  } = useTopics(activeDocId, token, authHeaders, handleTopicsError);
+
 
   const activeDoc = documentations.find((d) => d.id === activeDocId);
   const activeTopic = topics.find((t) => t.id === activeTopicId);

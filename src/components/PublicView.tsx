@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useMemo } from "react";
+import React, { useState, useEffect, useLayoutEffect, useMemo, useRef } from "react";
 import {
   Menu,
   BookOpen,
@@ -13,9 +13,10 @@ import {
   X,
   Search,
 } from "lucide-react";
-import DOMPurify from "dompurify";
 import { Documentation, Topic } from "../types";
 import SidebarRight from "./SidebarRight";
+import { sanitizeHtml } from "../shared/sanitize";
+
 
 interface PublicViewProps {
   documentations: Documentation[];
@@ -117,6 +118,14 @@ export default function PublicView({
     lg: "text-lg md:text-xl",
     xl: "text-xl md:text-2xl",
   }[fontSize];
+
+  const contentRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (contentRef.current && activeTopic) {
+      contentRef.current.innerHTML = sanitizeHtml(activeTopic.content || "");
+    }
+  }, [activeTopic, fontType, fontSize]);
 
   return (
     <div className="min-h-screen bg-white flex flex-col" id="public-view-container">
@@ -480,31 +489,16 @@ export default function PublicView({
                 </div>
               </div>
 
-              <article
-                className={`prose max-w-none hover:prose-headings:text-coral-700 ${fontClass} ${sizeClass}`}
-                id="public-reading-article"
-              >
+              <div id="public-reading-container" className={`${fontClass} ${sizeClass}`}>
                 <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-coral-900 mb-2 leading-tight border-b border-coral-200/80 pb-4">
                   {activeTopic.title}
                 </h1>
                 <div
-                  className="mt-6 leading-relaxed text-coral-900 space-y-4 prose prose-coral"
-                  dangerouslySetInnerHTML={{
-                    __html: DOMPurify.sanitize(activeTopic.content || "", {
-                      ADD_TAGS: ["iframe"],
-                      ADD_ATTR: [
-                        "allow",
-                        "allowfullscreen",
-                        "frameborder",
-                        "target",
-                        "contenteditable",
-                        "style",
-                      ],
-                    }),
-                  }}
+                  ref={contentRef}
+                  className="mt-6 leading-relaxed text-coral-900 prose max-w-none"
                   style={{ fontFamily: fontType === "serif" ? "Georgia, serif" : undefined }}
                 />
-              </article>
+              </div>
 
               <div className="mt-12 pt-6 border-t border-coral-200 flex items-center justify-between gap-4">
                 <div className="text-[10px] font-bold text-coral-400 uppercase tracking-widest">
